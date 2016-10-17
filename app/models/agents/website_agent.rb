@@ -106,6 +106,14 @@ module Agents
 
       Set `http_success_codes` to an array of status codes (e.g., `[404, 422]`) to treat HTTP response codes beyond 200 as successes.
 
+      The `interpolate` option is the way to format extracted data, and add meta information to each resulted payload.  Its value must be a hash, whose key-value pairs are interpolated after extraction and added to each event payload.  e.g.:
+
+          "interpolate": {
+            "formatted_date": "{{ extracted_date | date: '%Y-%m-%d' }}",
+            "site_url": "{{ _url_ }}",
+            "status": "{{ _response_.status }}"
+          }
+
       # Liquid Templating
 
       In Liquid templating, the following variable is available except when invoked by `data_from_event`:
@@ -126,8 +134,13 @@ module Agents
     MD
 
     event_description do
+      keys = options['extract'].keys
+      if interpolate_hash = options['interpolate'].presence
+        keys |= interpolate_hash.keys
+      end
+
       "Events will have the following fields:\n\n    %s" % [
-        Utils.pretty_print(Hash[options['extract'].keys.map { |key|
+        Utils.pretty_print(Hash[keys.map { |key|
           [key, "..."]
         }])
       ]
@@ -156,6 +169,7 @@ module Agents
       errors.add(:base, "either url, url_from_event, or data_from_event are required") unless options['url'].present? || options['url_from_event'].present? || options['data_from_event'].present?
       errors.add(:base, "expected_update_period_in_days is required") unless options['expected_update_period_in_days'].present?
       validate_extract_options!
+      validate_interpolate_options!
       validate_http_success_codes!
 
       # Check for optional fields
@@ -280,6 +294,15 @@ module Agents
       end
     end
 
+    def validate_interpolate_options!
+      interpolate_hash = options['interpolate'].presence or return
+
+      unless Hash === interpolate_hash &&
+             interpolate_hash.each_pair.all? { |key, value| String === value }
+        errors.add(:base, 'interpolate must be a hash of strings.')
+      end
+    end
+
     def check
       check_urls(interpolated['url'])
     end
@@ -333,20 +356,28 @@ module Agents
             extract_xml(doc)
         end
 
-      num_unique_lengths = interpolated['extract'].keys.map { |name| output[name].length }.uniq
-
-      if num_unique_lengths.length != 1
+      if output.each_value.each_cons(2).any? { |m, n| m.size != n.size }
         raise "Got an uneven number of matches for #{interpolated['name']}: #{interpolated['extract'].inspect}"
       end
 
-      old_events = previous_payloads num_unique_lengths.first
-      num_unique_lengths.first.times do |index|
+      num_tuples = output.each_value.first.size
+
+      old_events = previous_payloads num_tuples
+
+      interpolate = options['interpolate'].presence
+
+      num_tuples.times do |index|
         result = {}
-        interpolated['extract'].keys.each do |name|
+        interpolated['extract'].each_key do |name|
           result[name] = output[name][index]
-          if name.to_s == 'url' && url.present?
-            result[name] = (url + Utils.normalize_uri(result[name])).to_s
-          end
+        end
+
+        if interpolate
+          result.update(interpolate_options(interpolate, result))
+        end
+
+        if payload_url = result['url'].presence
+          result['url'] = (url + Utils.normalize_uri(payload_url)).to_s
         end
 
         if store_payload!(old_events, result)

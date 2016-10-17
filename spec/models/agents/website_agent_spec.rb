@@ -547,6 +547,22 @@ describe Agents::WebsiteAgent do
         expect(event.payload['original_url']).to eq('http://xkcd.com/index')
       end
 
+      it "should interpolate after extraction" do
+        @valid_options['interpolate'] = {
+          'title' => '{{title | upcase}}',
+          'summary' => '{{title}}: {{hovertext | truncate: 20}}',
+        }
+        @checker.options = @valid_options
+        @checker.check
+        event = Event.last
+        expect(event.payload).to include(
+                                   'title' => 'EVOLVING',
+                                   'url' => 'http://imgs.xkcd.com/comics/evolving.png',
+                                   'hovertext' => 'Biologists play reverse Pokémon, trying to avoid putting any one team member on the front lines long enough for the experience to cause evolution.',
+                                   'summary' => 'Evolving: Biologists play r...',
+                                 )
+      end
+
       describe "XML" do
         before do
           stub_request(:any, /github_rss/).to_return(
