@@ -190,8 +190,8 @@ module LiquidInterpolatable
     end
 
     # Rebase URIs contained in attributes in a given HTML fragment
-    def rebase_html(input, base_uri)
-      Utils.rebase_html(input, base_uri) rescue input
+    def rebase_hrefs(input, base_uri)
+      Utils.rebase_hrefs(input, base_uri) rescue input
     end
 
     # Unescape (basic) HTML entities in a string

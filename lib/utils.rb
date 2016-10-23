@@ -253,7 +253,7 @@ module Utils
     end
   end
 
-  def self.rebase_html(html, base_uri)
+  def self.rebase_hrefs(html, base_uri)
     base_uri = normalize_uri(base_uri)
     HTMLTransformer.replace_uris(html) { |url|
       base_uri.merge(normalize_uri(url)).to_s

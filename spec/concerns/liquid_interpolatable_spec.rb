@@ -324,7 +324,7 @@ describe LiquidInterpolatable::Filters do
     end
   end
 
-  describe 'rebase_html' do
+  describe 'rebase_hrefs' do
     let(:agent) { Agents::InterpolatableAgent.new(name: "test") }
 
     let(:fragment) { <<HTML }
@@ -357,7 +357,7 @@ HTML
 
     it 'rebases relative URLs in a fragment' do
       agent.interpolation_context['content'] = fragment
-      agent.options['template'] = "{{ content | rebase_html: 'http://example.com/support/files.html' }}"
+      agent.options['template'] = "{{ content | rebase_hrefs: 'http://example.com/support/files.html' }}"
       expect(agent.interpolated['template']).to eq(replaced_fragment)
     end
   end
