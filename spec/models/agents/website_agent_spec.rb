@@ -547,8 +547,8 @@ describe Agents::WebsiteAgent do
         expect(event.payload['original_url']).to eq('http://xkcd.com/index')
       end
 
-      it "should interpolate after extraction" do
-        @valid_options['interpolate'] = {
+      it "should interpolate by template after extraction" do
+        @valid_options['template'] = {
           'title' => '{{title | upcase}}',
           'summary' => '{{title}}: {{hovertext | truncate: 20}}',
         }

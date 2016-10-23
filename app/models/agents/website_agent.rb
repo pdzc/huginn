@@ -106,9 +106,9 @@ module Agents
 
       Set `http_success_codes` to an array of status codes (e.g., `[404, 422]`) to treat HTTP response codes beyond 200 as successes.
 
-      The `interpolate` option is the way to format extracted data, and add meta information to each resulted payload.  Its value must be a hash, whose key-value pairs are interpolated after extraction and added to each event payload.  e.g.:
+      The `template` option is the way to format extracted data, and add meta information to each resulted payload.  Its value must be a hash, whose key-value pairs are interpolated after extraction and added to each event payload.  e.g.:
 
-          "interpolate": {
+          "template": {
             "formatted_date": "{{ extracted_date | date: '%Y-%m-%d' }}",
             "site_url": "{{ _url_ }}",
             "status": "{{ _response_.status }}"
@@ -135,8 +135,8 @@ module Agents
 
     event_description do
       keys = options['extract'].keys
-      if interpolate_hash = options['interpolate'].presence
-        keys |= interpolate_hash.keys
+      if template = options['template'].presence
+        keys |= template.keys
       end
 
       "Events will have the following fields:\n\n    %s" % [
@@ -169,7 +169,7 @@ module Agents
       errors.add(:base, "either url, url_from_event, or data_from_event are required") unless options['url'].present? || options['url_from_event'].present? || options['data_from_event'].present?
       errors.add(:base, "expected_update_period_in_days is required") unless options['expected_update_period_in_days'].present?
       validate_extract_options!
-      validate_interpolate_options!
+      validate_template_options!
       validate_http_success_codes!
 
       # Check for optional fields
@@ -294,12 +294,12 @@ module Agents
       end
     end
 
-    def validate_interpolate_options!
-      interpolate_hash = options['interpolate'].presence or return
+    def validate_template_options!
+      template = options['template'].presence or return
 
-      unless Hash === interpolate_hash &&
-             interpolate_hash.each_pair.all? { |key, value| String === value }
-        errors.add(:base, 'interpolate must be a hash of strings.')
+      unless Hash === template &&
+             template.each_pair.all? { |key, value| String === value }
+        errors.add(:base, 'template must be a hash of strings.')
       end
     end
 
@@ -364,7 +364,7 @@ module Agents
 
       old_events = previous_payloads num_tuples
 
-      interpolate = options['interpolate'].presence
+      template = options['template'].presence
 
       num_tuples.times do |index|
         result = {}
@@ -372,8 +372,8 @@ module Agents
           result[name] = output[name][index]
         end
 
-        if interpolate
-          result.update(interpolate_options(interpolate, result))
+        if template
+          result.update(interpolate_options(template, result))
         end
 
         if payload_url = result['url'].presence
