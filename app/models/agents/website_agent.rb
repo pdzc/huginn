@@ -114,9 +114,11 @@ module Agents
             "status": "{{ _response_.status }}"
           }
 
+      In the `on_change` mode, change is detected based on the resulted event payload after applying this option.  If you want to add some keys to each event but ignore any change in them, set `mode` to `all` and put a DeDuplicationAgent downstream.
+
       # Liquid Templating
 
-      In Liquid templating, the following variable is available except when invoked by `data_from_event`:
+      In Liquid templating, the following variables are available except when invoked by `data_from_event`:
 
       * `_url_`: The URL specified to fetch the content from.
 
