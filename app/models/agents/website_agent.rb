@@ -106,7 +106,7 @@ module Agents
 
       Set `http_success_codes` to an array of status codes (e.g., `[404, 422]`) to treat HTTP response codes beyond 200 as successes.
 
-      The `template` option is the way to format extracted data, and add meta information to each resulted payload.  Its value must be a hash, whose key-value pairs are interpolated after extraction and added to each event payload.  e.g.:
+      The `template` option is a way to format extracted data, and to add meta information to each event created by this Agent.  Its value must be a hash, whose key-value pairs are interpolated after extraction and added to each event payload.  e.g.:
 
           "template": {
             "formatted_date": "{{ extracted_date | date: '%Y-%m-%d' }}",
